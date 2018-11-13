@@ -1,0 +1,21 @@
+{
+  "name": "discord-bot-framework",
+  "version": "0.0.1",
+  "description": "WIP Discord Bot Framework",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Juan Sedano",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^11.4.2",
+    "dotenv": "^6.1.0",
+    "mongoose": "^5.3.11"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^6.1.0",
+    "@types/mongodb": "^3.1.14",
+    "@types/mongoose": "^5.3.1"
+  }
+}
