@@ -1,6 +1,5 @@
 import ICommand from '../Interfaces/ICommand'
 import { Message, Collection } from 'discord.js';
-import { CommandModel } from '../Database/Models/CommandModel';
 
 abstract class Command implements ICommand {
     public AllowedChannels  : string[];
@@ -10,38 +9,90 @@ abstract class Command implements ICommand {
     public Signature        : string;
 
     public constructor(channels: string[], roles: string[], dbRequired = false) {
-        this.AllowedChannels = channels;
-        this.AllowedRoles = roles;
+        this.AllowedChannels  = channels;
+        this.AllowedRoles     = roles;
         this.RequiresDatabase = dbRequired;
     }
 
-    public AddAllowedChannel(channelId: string): void {
-        this.AllowedChannels.push(channelId);
+    public get LocalData() {
+        return this.Data[this.Name()];
     }
 
-    public RemoveAllowedChannel(channelId: string):void {
-        this.AllowedChannels = this.AllowedChannels.filter(id => id !== channelId);
+    public set LocalData(value: any) {
+        this.Data[this.Name()] = value;
     }
 
-    public AddAllowedRole(roleId: string): void {
-        this.AllowedRoles.push(roleId);
+    public get HasLocalData(): boolean {
+        return !!this.Data[this.Name()];
     }
 
-    public RemoveAllowedRole(roleId: string): void {
-        this.AllowedRoles = this.AllowedRoles.filter(id => id !== roleId);
+    private HasLocalField(name: string): boolean {
+        return this.HasLocalData && !!this.LocalData[name];
+    }
+
+    public AddAllowedChannel(channelId: string, local = false): void {
+        if (!local) {
+            this.AllowedChannels.push(channelId);
+        } else if (this.HasLocalField('AllowedChannels')) {
+            this.LocalData.AllowedChannels.push(channelId);
+        } else {
+            this.LocalData.AllowedChannels = [channelId];
+        }
+    }
+
+    public RemoveAllowedChannel(channelId: string, local = false): void {
+        if (!local) {
+            this.AllowedChannels = this.AllowedChannels.filter(id => id !== channelId);
+        } else if (this.HasLocalField('AllowedChannels')) {
+            this.LocalData.AllowedChannels = this.LocalData.AllowedChannels.filter(id => id !== channelId);
+        }
+    }
+
+    public AddAllowedRole(roleId: string, local = false): void {
+        if (!local) {
+            this.AllowedRoles.push(roleId);
+        } else if (this.HasLocalField('AllowedRoles')) {
+                this.LocalData.AllowedRoles.push(roleId);
+        } else {
+            this.LocalData.AllowedRoles = [roleId];
+        }
+    }
+
+    public RemoveAllowedRole(roleId: string, local = false): void {
+        if (!local) {
+            this.AllowedRoles = this.AllowedRoles.filter(id => id !== roleId);
+        } else if (this.HasLocalField('AllowedRoles')) {
+            this.LocalData.AllowedRoles = this.LocalData.AllowedRoles.filter(id => id !== roleId);
+        }
     }
 
     protected validateChannel(channelId: string): boolean {
-        return this.AllowedChannels.length === 0 || this.AllowedChannels.includes(channelId);
+        let AllowedChannels;
+
+        if (this.HasLocalData) {
+            AllowedChannels = [...this.AllowedChannels, ...(this.Data[this.Name()].AllowedChannels || [])];
+        } else {
+            AllowedChannels = this.AllowedChannels;
+        }
+
+        return AllowedChannels.length === 0 || AllowedChannels.includes(channelId);
     }
 
     protected ValidatePermission(roles: Collection<any, any>): boolean {
-        return this.AllowedRoles.length === 0 || roles.find((role) => this.AllowedRoles.includes(role));
+        let AllowedRoles;
+
+        if (this.HasLocalData) {
+            AllowedRoles = [...this.AllowedRoles, ...(this.Data[this.Name()].AllowedRoles || [])];
+        } else {
+            AllowedRoles = this.AllowedRoles;
+        }
+
+        return AllowedRoles.length === 0 || roles.find((role) => AllowedRoles.includes(role));
     }
 
     public Call(message: Message): Promise<any> {
         if (!this.ValidatePermission(message.member.roles) && !this.validateChannel(message.channel.id)) {
-            console.log('[Failed Permission]', message.member.displayName, message.channel.id, message.content);
+            console.warn('[Failed Permission]', message.member.displayName, message.channel.id, message.content);
 
             return Promise.reject('');
         }
@@ -49,31 +100,8 @@ abstract class Command implements ICommand {
         return this.Run(message);
     }
 
-    public async Save(): Promise<any> {
-        const {AllowedChannels, AllowedRoles, Data, RequiresDatabase} = this;
-        const Namespace = this.Namespace();
-        const model = await CommandModel.findOne({Namespace})
-
-        // if we have no data
-        if (RequiresDatabase || !model) {
-            const model = new CommandModel({
-                AllowedChannels,
-                AllowedRoles,
-                Data,
-                Namespace
-            })
-    
-            return await model.save()
-        }
-
-        model.AllowedChannels = AllowedChannels;
-        model.AllowedRoles = AllowedRoles;
-        model.Data = Data;
-        
-        return await model.save();
-    }
-
     public abstract Run(message: Message): Promise<any>;
+    public abstract Name(): string;
     public abstract Namespace(): string;
 }
 

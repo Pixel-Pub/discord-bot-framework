@@ -1,6 +1,8 @@
-import IDatabase from "./IDatabase";
+import IState from "./IState";
+import { Client } from "discord.js";
 
 export default interface IContext {
-    Database : IDatabase,
-    State    : any 
+    Client  : Client;
+    Loading : boolean;
+    State   : IState;
 }
