@@ -1,10 +1,10 @@
-import ICommand from '../Interfaces/ICommand'
-import { Message, Collection } from 'discord.js';
+import ICommand from '../Interfaces/ICommand';
+import { Message, Collection } from 'discord.js'
 
 abstract class Command implements ICommand {
     public AllowedChannels  : string[];
     public AllowedRoles     : string[];
-    public Data             : {};
+    public Data             : any;
     public RequiresDatabase : boolean;
     public Signature        : string;
 
@@ -26,47 +26,15 @@ abstract class Command implements ICommand {
         return !!this.Data[this.Name()];
     }
 
+    abstract Run(message: Message): Promise<any>;
+    abstract Name(): string;
+    abstract Namespace(): string;
+
     private HasLocalField(name: string): boolean {
         return this.HasLocalData && !!this.LocalData[name];
     }
 
-    public AddAllowedChannel(channelId: string, local = false): void {
-        if (!local) {
-            this.AllowedChannels.push(channelId);
-        } else if (this.HasLocalField('AllowedChannels')) {
-            this.LocalData.AllowedChannels.push(channelId);
-        } else {
-            this.LocalData.AllowedChannels = [channelId];
-        }
-    }
-
-    public RemoveAllowedChannel(channelId: string, local = false): void {
-        if (!local) {
-            this.AllowedChannels = this.AllowedChannels.filter(id => id !== channelId);
-        } else if (this.HasLocalField('AllowedChannels')) {
-            this.LocalData.AllowedChannels = this.LocalData.AllowedChannels.filter(id => id !== channelId);
-        }
-    }
-
-    public AddAllowedRole(roleId: string, local = false): void {
-        if (!local) {
-            this.AllowedRoles.push(roleId);
-        } else if (this.HasLocalField('AllowedRoles')) {
-                this.LocalData.AllowedRoles.push(roleId);
-        } else {
-            this.LocalData.AllowedRoles = [roleId];
-        }
-    }
-
-    public RemoveAllowedRole(roleId: string, local = false): void {
-        if (!local) {
-            this.AllowedRoles = this.AllowedRoles.filter(id => id !== roleId);
-        } else if (this.HasLocalField('AllowedRoles')) {
-            this.LocalData.AllowedRoles = this.LocalData.AllowedRoles.filter(id => id !== roleId);
-        }
-    }
-
-    protected validateChannel(channelId: string): boolean {
+    protected ValidateChannel(channelId: string): boolean {
         let AllowedChannels;
 
         if (this.HasLocalData) {
@@ -90,8 +58,37 @@ abstract class Command implements ICommand {
         return AllowedRoles.length === 0 || roles.find((role) => AllowedRoles.includes(role));
     }
 
+    private ModifyPermissions(type: string, action: string, key: string, local = false) {
+        const permissionKey = `Allowed${type}`;
+
+        if (!local) {
+            if (action === 'add') {
+                this[permissionKey].push(key);
+            } else {
+                this[permissionKey] = this[permissionKey].filter(entry => key === entry);
+            }
+        } else if(this.HasLocalField(permissionKey)) {
+            if (action === 'add') {
+                this.LocalData[permissionKey].push(key);
+            } else {
+                this.LocalData[permissionKey] = this.LocalData[permissionKey].filter(entry => key === entry);
+            }
+        } else {
+            this.LocalData[permissionKey] = [key];
+        }
+    }
+
+    public AddAllowedChannel(channelId: string, local = false): void {
+        return this.ModifyPermissions('Channel', 'add', channelId, local);
+    }
+
+    public AddAllowedRole(roleId: string, local = false): void {
+        return this.ModifyPermissions('Role', 'add', roleId, local);
+
+    }
+
     public Call(message: Message): Promise<any> {
-        if (!this.ValidatePermission(message.member.roles) && !this.validateChannel(message.channel.id)) {
+        if (!this.ValidatePermission(message.member.roles) && !this.ValidateChannel(message.channel.id)) {
             console.warn('[Failed Permission]', message.member.displayName, message.channel.id, message.content);
 
             return Promise.reject('');
@@ -100,9 +97,34 @@ abstract class Command implements ICommand {
         return this.Run(message);
     }
 
-    public abstract Run(message: Message): Promise<any>;
-    public abstract Name(): string;
-    public abstract Namespace(): string;
+    public GetContext(message: Message): any {
+        const parts = message.content.split(' ').slice(1);
+        const result = {
+            args: []
+        };
+
+        parts.forEach((part: string) => {
+            if (part.indexOf('--') === 0) {
+                const param = part.split('=');
+
+                result[param[0]] = param[1] || true;
+            } else {
+                result.args.push(part);
+            }
+        });
+
+        return result;
+    }
+
+    public RemoveAllowedChannel(channelId: string, local = false): void {
+        return this.ModifyPermissions('Channel', 'remove', channelId, local);
+
+    }
+
+    public RemoveAllowedRole(roleId: string, local = false): void {
+        return this.ModifyPermissions('Role', 'remove', roleId, local);
+
+    }
 }
 
 export default Command;
