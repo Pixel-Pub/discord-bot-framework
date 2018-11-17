@@ -12,11 +12,12 @@ export interface ICommandsModel extends ICommands, Document {};
 // });
 
 const CommandsSchema: Schema = new Schema({
-    AllowedRoles: [Types.String],
+    AllowedRoles:    [Types.String],
     AllowedChannels: [Types.String],
-    CreatedAt: [Types.Date],
-    Data: Types.Mixed,
-    Namespace: Types.String
+    AllowedUsers:    [Types.String],
+    CreatedAt:       [Types.Date],
+    Data:            Types.Mixed,
+    Namespace:       Types.String
 });
 
 CommandsSchema

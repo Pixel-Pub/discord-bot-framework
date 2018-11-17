@@ -8,6 +8,7 @@ import IProcessor from "../Interfaces/IProcessor";
 const EMPTY_COMMAND = {
     AllowedChannels: [],
     AllowedRoles   : [],
+    AllowedUsers   : [],
     Data           : {}
 }
 
@@ -43,17 +44,17 @@ export default class Processor implements IProcessor {
         Object.keys(Commands).forEach((key: string) => {
             const commandData = databaseCommands[key] || {...EMPTY_COMMAND, Namespace: key};
 
-            const {AllowedChannels, AllowedRoles, Data} = commandData;
+            const {AllowedChannels, AllowedRoles, AllowedUsers, Data} = commandData;  
 
-            data[key.toLowerCase()] = new Commands[key](AllowedChannels, AllowedRoles, !!databaseCommands[key])
-
+            data[key.toLowerCase()]      = new Commands[key](AllowedChannels, AllowedRoles, AllowedUsers, !!databaseCommands[key]);
             data[key.toLowerCase()].Data = Data;
-            console.log('[SUCCESS] Loaded Command', key)
+
+            console.log('[SUCCESS] Loaded Command', key);
         })
 
-        this.Commands = data
+        this.Commands = data;
 
-        return data
+        return data;
     }
 
     public async Handle(message: Message): Promise<any> {

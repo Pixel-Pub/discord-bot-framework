@@ -1,33 +1,33 @@
 import Command from "../../Abstractions/Command";
 import { Message } from "discord.js";
 
-class StreamLeader extends Command {
-    static NAME  = 'StreamLeader';
-    static ROLE  = '509747336990162945'
+class StreamTeam extends Command {
+    static NAME  = 'StreamTeam';
+    static ROLE  = '469547812766351361';
     static ROLES = [
-        '298481589506015232',
+        '509747336990162945',
         '298481229316227073'
     ];
 
     public Name(): string { 
-        return 'StreamLeader';
+        return 'StreamTeam';
     }
     public Namespace(): string { 
         return 'StreamTeam';
     }
 
     public constructor(channels: string[], roles: string[], users: string[], dbRequired = false) {
-        super(channels, StreamLeader.ROLES, users, dbRequired);
+        super(channels, StreamTeam.ROLES, users, dbRequired);
 
-        console.log('StreamLeader Ignoring:', roles);
+        console.log('StreamTeam Ignoring:', roles);
     }
 
     private async AddDiscordRole(message: Message, id): Promise<any> {
         const guild  = message.guild;
         const member = guild.members.find((member) => member.id === id);
 
-        if (!member.roles.has(StreamLeader.ROLE)) {
-            member.addRole(StreamLeader.ROLE, `Added by ${message.author.username}`);
+        if (!member.roles.has(StreamTeam.ROLE)) {
+            member.addRole(StreamTeam.ROLE, `Added by ${message.author.username}`);
         }
     }
 
@@ -35,10 +35,11 @@ class StreamLeader extends Command {
         const guild  = message.guild;
         const member = guild.members.find((member) => member.id === id);
 
-        if (member.roles.has(StreamLeader.ROLE)) {
-            return member.removeRole(StreamLeader.ROLE,  `Removed by ${message.author.username}`);
+        if (member.roles.has(StreamTeam.ROLE)) {
+            return member.removeRole(StreamTeam.ROLE,  `Removed by ${message.author.username}`);
         }
     }
+
     public async Run(message: Message): Promise<any> {
         const context = this.GetContext(message);
         const parameter = context.args[1].replace(/\D/g, '');
@@ -66,4 +67,4 @@ class StreamLeader extends Command {
     }
 }
 
-export default StreamLeader;
+export default StreamTeam;

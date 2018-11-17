@@ -1,4 +1,5 @@
 export interface Datafield {
+    AllowedUsers    ?: string[];
     AllowedRoles    ?: string[];
     AllowedChannels ?: string[];
     Data            ?: any;
@@ -9,6 +10,7 @@ export interface Data {
 }
 
 export default interface ICommands {
+    AllowedUsers    ?: string[];
     AllowedRoles    ?: string[];
     AllowedChannels ?: string[];
     Data            ?: Data;

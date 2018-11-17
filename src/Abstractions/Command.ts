@@ -1,18 +1,20 @@
 import ICommand from '../Interfaces/ICommand';
-import { Message, Collection } from 'discord.js'
+import { Message, Collection } from 'discord.js';
 import Commands from '../Database/Models/Commands';
 
 abstract class Command implements ICommand {
     public AllowedChannels  : string[];
     public AllowedRoles     : string[];
+    public AllowedUsers     : string[];
     public Data             : any;
     public RequiresDatabase : boolean;
     public Signature        : string;
     private Modified        : boolean;
 
-    public constructor(channels: string[], roles: string[], dbRequired = false) {
+    public constructor(channels: string[], roles: string[], users: string[], dbRequired = false) {
         this.AllowedChannels  = channels;
         this.AllowedRoles     = roles;
+        this.AllowedUsers     = users;
         this.RequiresDatabase = dbRequired;
 
         this.Modified = false;
@@ -39,31 +41,35 @@ abstract class Command implements ICommand {
     }
 
     protected ValidateChannel(channelId: string): boolean {
-        let AllowedChannels;
-
-        if (this.HasLocalData) {
-            AllowedChannels = [...this.AllowedChannels, ...(this.Data[this.Name()].AllowedChannels || [])];
-        } else {
-            AllowedChannels = this.AllowedChannels;
-        }
+        const AllowedChannels = this.GetValidationPermission('Channel')
 
         return AllowedChannels.length === 0 || AllowedChannels.includes(channelId);
     }
 
-    protected ValidatePermission(roles: Collection<any, any>): boolean {
-        let AllowedRoles;
+    protected ValidateRoles(roles: Collection<any, any>): boolean {
+        const AllowedRoles = this.GetValidationPermission('Role')
+
+        return AllowedRoles.length === 0 || roles.find((role) => AllowedRoles.includes(role.id));
+    }
+
+    protected ValidateUsers(user: string): boolean {
+        const AllowedUsers = this.GetValidationPermission('User')
+
+        return AllowedUsers.length === 0 || AllowedUsers.includes(user);
+    }
+
+    private GetValidationPermission(type: string): any {
+        const key = `Allowed${type}s`;
 
         if (this.HasLocalData) {
-            AllowedRoles = [...this.AllowedRoles, ...(this.Data[this.Name()].AllowedRoles || [])];
+            return [...this[key], ...(this.LocalData[key] || [])];
         } else {
-            AllowedRoles = this.AllowedRoles;
+            return this[key];
         }
-
-        return AllowedRoles.length === 0 || roles.find((role) => AllowedRoles.includes(role));
     }
 
     private ModifyPermissions(type: string, action: string, key: string, local = false) {
-        const permissionKey = `Allowed${type}`;
+        const permissionKey = `Allowed${type}s`;
 
         if (!local) {
             if (action === 'add') {
@@ -90,11 +96,18 @@ abstract class Command implements ICommand {
 
     public AddAllowedRole(roleId: string, local = false): void {
         return this.ModifyPermissions('Role', 'add', roleId, local);
+    }
 
+    public AddAllowedUser(user: string, local = false): void {
+        return this.ModifyPermissions('User', 'add', user, local);
     }
 
     public Call(message: Message): Promise<any> {
-        if (!this.ValidatePermission(message.member.roles) || !this.ValidateChannel(message.channel.id)) {
+        message.author.send(`
+            ${!this.ValidateRoles(message.member.roles)} || ${!this.ValidateChannel(message.channel.id)}}
+        `)
+    
+        if (!this.ValidateRoles(message.member.roles) || !this.ValidateChannel(message.channel.id)) {
             console.warn('[Failed Permission]', message.member.displayName, message.channel.id, message.content);
 
             return Promise.resolve('');
@@ -104,7 +117,7 @@ abstract class Command implements ICommand {
     }
 
     public GetContext(message: Message): any {
-        const parts = message.content.split(' ').slice(1);
+        const parts  = message.content.split(' ').slice(1);
         const result = {
             args: []
         };
@@ -113,7 +126,7 @@ abstract class Command implements ICommand {
             if (part.indexOf('--') === 0) {
                 const param = part.split('=');
 
-                result[param[0]] = param[1] || true;
+                result[param[0].replace('--', '')] = param[1] || true;
             } else {
                 result.args.push(part);
             }
@@ -124,11 +137,14 @@ abstract class Command implements ICommand {
 
     public RemoveAllowedChannel(channelId: string, local = false): void {
         return this.ModifyPermissions('Channel', 'remove', channelId, local);
-
     }
 
     public RemoveAllowedRole(roleId: string, local = false): void {
         return this.ModifyPermissions('Role', 'remove', roleId, local);
+    }
+
+    public RemoveAllowedUsers(user: string, local = false): void {
+        return this.ModifyPermissions('User', 'remove', user, local);
     }
 
     public async Save(): Promise<any> {
@@ -146,10 +162,12 @@ abstract class Command implements ICommand {
 
             command.Data[this.Name()] = {
                 AllowedChannels : this.AllowedChannels,
-                AllowedRoles    : this.AllowedRoles
-            }
+                AllowedRoles    : this.AllowedRoles,
+                AllowedUsers    : this.AllowedUsers
+            };
         }
 
+        return command.save();
     }
 }
 
