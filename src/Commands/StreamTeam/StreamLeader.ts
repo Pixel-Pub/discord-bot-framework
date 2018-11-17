@@ -1,16 +1,17 @@
 import Command from "../../Abstractions/Command";
 import { Message } from "discord.js";
+import { ROLES } from "../../Services/Constants";
 
 class StreamLeader extends Command {
-    static NAME  = 'StreamLeader';
-    static ROLE  = '509747336990162945'
+    static NAME  = 'streamLeader';
+    static ROLE  = ROLES.STREAM_TEAM_MANAGER;
     static ROLES = [
-        '298481589506015232',
-        '298481229316227073'
+        ROLES.ADMIN,
+        ROLES.STAFF
     ];
 
     public Name(): string { 
-        return 'StreamLeader';
+        return StreamLeader.NAME;
     }
     public Namespace(): string { 
         return 'StreamTeam';

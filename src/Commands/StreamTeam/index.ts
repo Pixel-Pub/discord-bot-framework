@@ -1,9 +1,9 @@
-import StreamLead from "./StreamLead";
+import StreamTeam from "./StreamTeam";
 import StreamLeader from "./StreamLeader";
 
-const StreamTeam = {
-    [StreamLead.NAME]  : StreamLead,
+const streamTeam = {
+    [StreamTeam.NAME]  : StreamTeam,
     [StreamLeader.NAME]: StreamLeader
 }
 
-export default StreamTeam
+export default streamTeam

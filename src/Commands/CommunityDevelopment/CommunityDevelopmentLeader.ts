@@ -1,15 +1,16 @@
 import Command from "../../Abstractions/Command";
 import { Message } from "discord.js";
+import { ROLES } from "../../Services/Constants";
 
 class CommunityDevelopmentLeader extends Command {
-    static NAME  = 'CommunityDevelopmentLeader';
-    static ROLE  = '509747664242606084'
+    static NAME  = 'comDevLead';
+    static ROLE  = ROLES.COMMUNITY_DEVELOPMENT_LEADER
     static ROLES = [
-        '298481229316227073'
+        ROLES.ADMIN
     ];
 
     public Name(): string { 
-        return 'CommunityDevelopmentLeader';
+        return CommunityDevelopmentLeader.NAME;
     }
     public Namespace(): string { 
         return `CommunityDevelopment`;
@@ -48,14 +49,14 @@ class CommunityDevelopmentLeader extends Command {
                     this.AddAllowedUser(parameter),
                     this.AddDiscordRole(message, parameter)
                 ]);
-
+                
                 break;
             case 'delete':
                 await Promise.all([
                     this.RemoveAllowedUsers(context.args[1]),
                     this.RemoveDiscordRole(message, parameter)
                 ]);
-
+                
                 break;
             default:
                 return message.channel.send(`Invalid Argument: ${context.args[0]}`);

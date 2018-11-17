@@ -1,16 +1,18 @@
 import Command from "../../Abstractions/Command";
 import { Message } from "discord.js";
+import { ROLES } from "../../Services/Constants";
 
 class CommunityDevelopmentCouncil extends Command {
-    static NAME  = 'CommunityDevelopmentCouncil';
-    static ROLE  = '477986457244401675';
+    static NAME  = 'comDev';
+    static ROLE  = ROLES.COMMUNITY_DEVELOPMENT_COUNCIL;
     static ROLES = [
-        '509747336990162945',
-        '298481229316227073'
+        ROLES.COMMUNITY_DEVELOPMENT_LEADER,
+        ROLES.ADMIN,
+        ROLES.STAFF
     ];
 
     public Name(): string { 
-        return 'CommunityDevelopmentCouncil';
+        return CommunityDevelopmentCouncil.NAME;
     }
     public Namespace(): string { 
         return 'CommunityDevelopment';

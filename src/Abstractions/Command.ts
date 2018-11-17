@@ -103,9 +103,6 @@ abstract class Command implements ICommand {
     }
 
     public Call(message: Message): Promise<any> {
-        message.author.send(`
-            ${!this.ValidateRoles(message.member.roles)} || ${!this.ValidateChannel(message.channel.id)}}
-        `)
     
         if (!this.ValidateRoles(message.member.roles) || !this.ValidateChannel(message.channel.id)) {
             console.warn('[Failed Permission]', message.member.displayName, message.channel.id, message.content);
@@ -113,7 +110,9 @@ abstract class Command implements ICommand {
             return Promise.resolve('');
         }
 
-        return this.Run(message);
+        return this
+            .Run(message)
+            .then(() => this.Save());
     }
 
     public GetContext(message: Message): any {
@@ -132,6 +131,11 @@ abstract class Command implements ICommand {
             }
         });
 
+        if (result.args.length < 2) {
+            result.args.push('');
+            result.args.push('');
+        }
+
         return result;
     }
 
@@ -148,8 +152,14 @@ abstract class Command implements ICommand {
     }
 
     public async Save(): Promise<any> {
-        const command = await Commands.findOne({Namespace: this.Namespace()});
+        let command = await Commands.findOne({Namespace: this.Namespace()});
 
+        if (!command) {
+            command = new Commands({
+                Namespace: this.Namespace(),
+                Data     : {}
+            })
+        }
         command.Data = {
             ...(command.Data || {}),
             ...this.Data,
