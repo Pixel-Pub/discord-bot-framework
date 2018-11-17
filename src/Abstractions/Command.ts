@@ -156,8 +156,11 @@ abstract class Command implements ICommand {
 
         if (!command) {
             command = new Commands({
-                Namespace: this.Namespace(),
-                Data     : {}
+                Namespace:       this.Namespace(),
+                AllowedChannels: this.AllowedChannels,
+                AllowedRoles:    this.AllowedRoles,
+                AllowedUsers:    this.AllowedUsers,
+                Data:            {}
             })
         }
         command.Data = {
