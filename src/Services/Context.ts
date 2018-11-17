@@ -14,8 +14,10 @@ export default class Context implements IContext {
     constructor(client: Client) {
         this.Loading = true;
         this.Client  = client;
+    }
 
-        mongoose
+    public initialize(): Promise<any> {
+        return mongoose
             .connect(process.env.CONNECTION_STRING)
             .then(async () => {
                 const users         = await Users.find();
@@ -37,13 +39,15 @@ export default class Context implements IContext {
                 return this.Loading;
             })
             .then(() => {
-                console.log('[SUCCESS] Database Loaded')
+                console.log('[SUCCESS] Database Loaded');
+
+                return Promise.resolve();
             })
             .catch((e) => {
-                console.error('[ERROR] Database Failed to Load', e)
+                console.error('[ERROR] Database Failed to Load', e);
             })
     }
-
+    
     public async Save() {
         
     }

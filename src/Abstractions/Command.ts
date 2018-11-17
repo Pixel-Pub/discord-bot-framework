@@ -1,5 +1,6 @@
 import ICommand from '../Interfaces/ICommand';
 import { Message, Collection } from 'discord.js'
+import Commands from '../Database/Models/Commands';
 
 abstract class Command implements ICommand {
     public AllowedChannels  : string[];
@@ -7,11 +8,14 @@ abstract class Command implements ICommand {
     public Data             : any;
     public RequiresDatabase : boolean;
     public Signature        : string;
+    private Modified        : boolean;
 
     public constructor(channels: string[], roles: string[], dbRequired = false) {
         this.AllowedChannels  = channels;
         this.AllowedRoles     = roles;
         this.RequiresDatabase = dbRequired;
+
+        this.Modified = false;
     }
 
     public get LocalData() {
@@ -76,6 +80,8 @@ abstract class Command implements ICommand {
         } else {
             this.LocalData[permissionKey] = [key];
         }
+
+        this.Modified = true;
     }
 
     public AddAllowedChannel(channelId: string, local = false): void {
@@ -88,10 +94,10 @@ abstract class Command implements ICommand {
     }
 
     public Call(message: Message): Promise<any> {
-        if (!this.ValidatePermission(message.member.roles) && !this.ValidateChannel(message.channel.id)) {
+        if (!this.ValidatePermission(message.member.roles) || !this.ValidateChannel(message.channel.id)) {
             console.warn('[Failed Permission]', message.member.displayName, message.channel.id, message.content);
 
-            return Promise.reject('');
+            return Promise.resolve('');
         }
 
         return this.Run(message);
@@ -123,6 +129,26 @@ abstract class Command implements ICommand {
 
     public RemoveAllowedRole(roleId: string, local = false): void {
         return this.ModifyPermissions('Role', 'remove', roleId, local);
+    }
+
+    public async Save(): Promise<any> {
+        const command = await Commands.findOne({Namespace: this.Namespace()});
+
+        command.Data = {
+            ...(command.Data || {}),
+            ...this.Data,
+        };
+
+        if (this.Modified) {
+            if (!command.Data[this.Name()]) {
+                command.Data[this.Name()] = {};
+            }
+
+            command.Data[this.Name()] = {
+                AllowedChannels : this.AllowedChannels,
+                AllowedRoles    : this.AllowedRoles
+            }
+        }
 
     }
 }

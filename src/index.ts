@@ -9,13 +9,23 @@ dotenv.config()
 
 const client    = new Discord.Client();
 const context   = new Context(client);
-const processor = new Processor(context, '%')
 
-client.on('message', (message: Message) => {
-    processor
-        .Handle(message)
-        .catch((e) => {
-            console.error('[FATAL EXCEPTION]', e)
+context
+    .initialize()
+    .then(() => {
+        const processor = new Processor(context, '%')
+
+        client.on('message', (message: Message) => {
+            processor
+                .Handle(message)
+                .catch((e) => {
+                    console.error('[FATAL EXCEPTION]', e)
+                })
         })
-})
-client.login(process.env.BOT_TOKEN);
+        
+        client
+            .login(process.env.BOT_TOKEN)
+            .then(() => {
+                console.log('[SUCCESS] Bot Online')
+            });
+    })

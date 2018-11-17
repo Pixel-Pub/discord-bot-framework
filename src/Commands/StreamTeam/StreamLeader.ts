@@ -1,7 +1,13 @@
 import Command from "../../Abstractions/Command";
 import { Message } from "discord.js";
 
-class StreamAdministration extends Command {
+class StreamLeader extends Command {
+    static NAME  = 'StreamLeader';
+    static ROLES = [
+        '298481589506015232',
+        '298481229316227073'
+    ];
+
     public Name(): string { 
         return 'StreamLeader';
     }
@@ -10,7 +16,7 @@ class StreamAdministration extends Command {
     }
 
     public constructor(channels: string[], roles: string[], dbRequired = false) {
-        super(channels, ['test'], dbRequired)
+        super(channels, StreamLeader.ROLES, dbRequired)
 
         console.log('StreamLeader Ignoring:', roles)
     }
@@ -41,15 +47,14 @@ class StreamAdministration extends Command {
                 await this.add(context.args[1]);
                 break;
             case 'delete':
-                await this.delete(context.args[1])
+                await this.delete(context.args[1]);
                 break;
             default:
-                console.error()
-                break;
+                return message.channel.send(`Invalid Argument: ${context.args[0]}`);
         }
 
-        // message.spit out 'success'
+       return message.channel.send('Records Updated');
     }
 }
 
-export default StreamAdministration;
+export default StreamLeader;

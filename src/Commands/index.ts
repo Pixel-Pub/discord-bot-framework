@@ -1,21 +1,8 @@
-import Command from "../Abstractions/Command";
-import { Message } from "discord.js";
+import StreamTeam from "./StreamTeam";
 
-class TestCommand extends Command {
-    static Name: 'test';
-    public Name = () => TestCommand.Name
+const Commands = {
+    ...StreamTeam
+};
 
-    static Namespace: 'test';
-    public Namespace = () => TestCommand.Namespace
 
-    public Run(message: Message) {
-        return Promise.resolve(message)
-    }
-
-}
-
-const content = {
-    [TestCommand.Name]: TestCommand
-}
-
-export default content
+export default Commands
